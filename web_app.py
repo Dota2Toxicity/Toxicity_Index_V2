@@ -5,7 +5,7 @@ from pprint import pprint
 import time
 import sqlite3
 
-account_ids = 7255923
+account_ids = 113139328
 api_instance = od_python.PlayersApi()
 api_response = api_instance.players_account_id_matches_get(account_ids, limit=1)
 dict1=eval(str(api_response[0]))
@@ -24,25 +24,31 @@ for x in list1:
         player_list.append(x['account_id'])
     else:
         player_list.append('Anonymous')
-# create a player id to personaname dictionary with hero id as well
+# create a player id to personaname dictionary with hero id as well and player slot
 persona_dict = {}
 for x in list1:
     if x['account_id'] == 'None':
         persona_dict.update({'anonymous': 'none'})
     else:
-        persona_dict.update({x['account_id']: [x['personaname'],x['hero_id']]})
+        persona_dict.update({x['account_id']: [x['personaname'],x['hero_id'],x['player_slot']]})
 
 #get SQL variables ready
 sqliteConnection = sqlite3.connect('toxicity_database.db')
 cursor = sqliteConnection.cursor()
 query = "SELECT * FROM toxicity WHERE account_id=?"
 final_dict={}
+final_dict_rad={}
+final_dict_dire={}
 running_list=[]
 for player in player_list:
         cursor.execute(query, (player,))
         for row in cursor:
             running_list.append(player)
-            final_dict.update({persona_dict[player][0]:[row[1],persona_dict[player][1]]})
+            if persona_dict[player][2] < 5:
+                final_dict_rad.update({persona_dict[player][0]:[row[1],persona_dict[player][1]]})
+            else:
+                final_dict_dire.update({persona_dict[player][0]: [row[1], persona_dict[player][1]]})
+
 
 players_not_in_db = [x for x in player_list if x not in running_list]
 
@@ -111,15 +117,23 @@ for player in players_not_in_db:
         for wordten in ten_point_words:
             if wordten in word_list:
                 BBDS_numerator = BBDS_numerator + (10*word_cloud[wordten])
-        final_dict.update({persona_dict[player][0]:[str(BBDS_numerator),persona_dict[player][1]]})
+        #final_dict.update({persona_dict[player][0]:[str(BBDS_numerator),persona_dict[player][1]]})
+        if persona_dict[player][2] < 5:
+            final_dict_rad.update({persona_dict[player][0]: [row[1], persona_dict[player][1]]})
+        else:
+            final_dict_dire.update({persona_dict[player][0]: [row[1], persona_dict[player][1]]})
 
 
-finallist = list(final_dict.items())
+finallist = list(final_dict_rad.items())
+for x in range(0,6):
+    if len(finallist) < x:
+        finallist.append(('Anonymous', ['Anonymous', 'Anonymous']))
+final_dict_dire = list(final_dict_dire.items())
+for y in final_dict_dire:
+    finallist.append(y)
 for x in range(0,11):
     if len(finallist) < x:
         finallist.append(('Anonymous', ['Anonymous', 'Anonymous']))
-
-print(hero_dict[finallist[0][1][1]])
 
 
 print(finallist[0][1][1], finallist[0][0], finallist[0][1][0], finallist[1][1][1], finallist[1][0], finallist[1][1][0], finallist[2][1][1], finallist[2][0], finallist[2][1][0], finallist[3][1][1], finallist[3][0], finallist[3][1][0], finallist[4][1][1], finallist[4][0], finallist[4][1][0], finallist[5][1][1], finallist[5][0], finallist[5][1][0], finallist[6][1][1], finallist[6][0], finallist[6][1][0], finallist[7][1][1], finallist[7][0], finallist[7][1][0], finallist[8][1][1], finallist[8][0], finallist[8][1][0], finallist[9][1][1], finallist[9][0], finallist[9][1][0])
